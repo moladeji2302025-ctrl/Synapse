@@ -1,0 +1,28 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+**/local.properties
+**/*.keystore
+**/service-account*.json
+
+# node / web
+node_modules/
+web/dist/
+pc/dist/
+*.log
+
+# android / gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+*.apk
+
+# supabase local
+backend/.branches/
+backend/.temp/
+
+# os
+.DS_Store
+Thumbs.db
