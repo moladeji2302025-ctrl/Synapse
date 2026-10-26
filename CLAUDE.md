@@ -9,9 +9,13 @@ decisions, architecture, milestones, and a "current status / resume here" sectio
 up to date. Then continue from its Next steps.
 
 ## Boundaries that always hold
-1. **Self-contained location.** All work lives under this folder (`C:\Users\mofej\Synapse`).
-   Never create, move or write files into `C:\Users\mofej\Hope`, and never read from or import
-   Hope's code, data, keys or assets into this project. This project has its own git repo.
+1. **Self-contained location, with reference-only borrowing from Hope.** All work lives under
+   this folder (`C:\Users\mofej\Synapse`) with its own git repo. Never create, move or write
+   files into `C:\Users\mofej\Hope`. You **may** study Hope's own code as a reference and
+   re-implement its patterns here (see `docs/HOPE_REFERENCE.md`), but Synapse must not depend on,
+   import from, or build against Hope at runtime, and must **never** bring Hope's private user
+   data, its keys, or the cloned Imogen voice into this project. The Imogen clone is personal-use
+   only and never enters anything submitted; if a voice is needed, use a licensed one.
 2. **Consent-based collection only.** Every category of data a client records is gated by the
    user's onboarding choices. Nothing is captured outside what the user enabled.
 3. **Never recorded, on any account including the admin's:** PINs, passwords, card/CVV

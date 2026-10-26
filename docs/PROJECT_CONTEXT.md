@@ -87,6 +87,9 @@ graph, mine rhythms and generate plans. The guide is a server-side Edge Function
 - `README.md`, `CLAUDE.md` (standing rules), `.gitignore`
 - `backend/migrations/0001_init.sql` — full initial schema with RLS and pgvector
 - `docs/PROJECT_CONTEXT.md` (this file)
+- `docs/HOPE_REFERENCE.md` — Hope patterns to borrow and re-implement (consent-gated recording,
+  routine suggest/keep/settle, offline queue, encrypted storage, living-docs style), with the
+  rule that Hope's private data, keys and the Imogen voice never come across.
 
 **Next steps (resume here):**
 1. Write the rest of the living docs: `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`,
