@@ -1,0 +1,11 @@
+{
+  "name": "synapse-report-build",
+  "private": true,
+  "description": "Builds the project report chapters into a Word document and checks the department's rules.",
+  "scripts": {
+    "build": "node build.cjs"
+  },
+  "dependencies": {
+    "docx": "^9.5.0"
+  }
+}

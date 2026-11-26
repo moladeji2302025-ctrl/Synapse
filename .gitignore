@@ -23,6 +23,9 @@ android/.idea/
 backend/.branches/
 backend/.temp/
 
+# downloaded papers — publishers' copyright; keep local, never commit
+docs/dissertation/papers/
+
 # os
 .DS_Store
 Thumbs.db

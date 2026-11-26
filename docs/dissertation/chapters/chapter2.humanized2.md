@@ -1,0 +1,123 @@
+# CHAPTER TWO
+# LITERATURE REVIEW
+
+## 2.1 Preamble
+
+This chapter reviews the literature behind the system described in Chapter One. It takes the idea of an adaptive routine learning system apart and studies each of its basic parts in turn, starting with routines and habits. These are the behaviour the system sets out to learn. Two sections on data follow, one on how activity data is collected and one on how context shapes the behaviour it records. Then come the methods for learning routines from data, the ways of storing what is learned and the timing of suggestions. Intelligent assistants, cross-device storage, privacy and user acceptance are next. The chapter closes with the technologies chosen, a review of existing systems and the gap this project fills.
+
+## 2.2 Routines and Habits
+
+A routine is a pattern of actions that a person repeats in similar situations. Banovic et al. (2016) describe it as what a person usually does in a given situation, such as checking email on reaching the office. Habits are close kin. A habit is behaviour that a situation prompts automatically, learned by repeating it in that same situation [@gardner2022]. Routines, seen this way, are chains of habits tied to times, places and earlier actions. Once formed, a habit can drive behaviour even when the person intends to act differently [@gardner2020]. What people do and what they plan can come apart. A system that learns from real behaviour can capture the routines that planning tools miss.
+
+Habits take time to form, and how much time varies widely between people. A review of habit-formation studies put the usual figure at around two months [@singh2024]. Individual times ranged from a few days to almost a year, so no single figure fits every student. Gardner et al. (2022) advise tracking habit formation through repeated measures in everyday life, since one moment says little about whether a habit has formed. For Synapse, two things follow. A routine seen only a few times should not be treated as settled; it should first be confirmed over several weeks. The system should also keep watching for change, since habits go on forming and fading long after they first appear.
+
+## 2.3 Collecting Activity Data from Smartphones and the Web
+
+Through their sensors and usage logs, smartphones can record a wide range of everyday activity. Harari et al. (2016) describe how researchers use phones to collect behavioural data, and the practical and ethical challenges that come with it. App usage is among the richest of these sources. It shows which app is opened, when and for how long. Surveys find that app usage records can predict future behaviour and support recommendations of useful actions [@caolin2017; @li2022]. Large studies confirm that app usage reveals meaningful differences between users [@zhao2016]. Public datasets exist as well, among them LSApp, which holds app usage records collected from 292 users [@aliannejadi2021].
+
+On Android, app usage can be read through the system's usage statistics service once the user grants permission. That service records which apps are used and for how long; what appears on the screen is never read. The accessibility service could read screen content too, but it is far more intrusive. Privacy worries make people reluctant to join phone data studies [@roberts2022], so the less intrusive service is the safer choice for Synapse. On the computer, activity is captured by a web browser extension, which records the websites a user visits and nothing else on the machine. Combining screen time across phones and computers gives a fuller picture than one device alone [@rooksby2016].
+
+## 2.4 Context and Context-Aware Computing
+
+Context is any information that describes a person's situation, such as the time, the day of the week and the place [@vahdat2019]. Context-aware systems use it to fit what they do to that situation. On smartphones, context strongly shapes which app a person opens next. Sarker et al. (2019a) compared common machine learning methods for predicting each user's phone usage from context such as time and place. Aliannejadi et al. (2021) used context to help mobile assistants pick the right app for a user's request. The two studies point the same way: time, day and place are useful signals for understanding routines. Synapse builds its routines on those three signals.
+
+Each record in Synapse carries the weekday, hour and month, plus a coarse place where the user allows it. Routines are learned per context, so one routine might belong to weekday mornings on campus. Deep learning models can also predict app usage from context, with high accuracy [@xia2020]. They typically need large amounts of data, though, and their decisions are hard to explain. That is a drawback for Synapse, whose users should be able to see why a suggestion was made. Simpler pattern mining methods give results that can be read and checked, so Synapse uses those instead. The next section describes them and the measures they rely on.
+
+## 2.5 Learning Routines from Data
+
+Pattern mining is a family of methods that find regularities in large collections of records. Its best-known method finds association rules, statements of the form "when A happens, B tends to happen" [@agrawal1993]. Two measures judge each rule. Support is the share of all records in which a pattern appears, which shows how common the pattern is. Confidence is the share of records containing A that also contain B, and it shows how reliably B follows A. Suppose a timetable app was opened on 6 of the 8 Monday mornings recorded. The rule "Monday morning, then timetable app" then has a confidence of 6 divided by 8, or 0.75. Synapse scores how firmly each routine is established with these two measures.
+
+Many routines repeat at regular intervals: every weekday morning, say, or every Sunday evening. Periodic pattern mining looks for patterns of this kind, and recent work refines how their regularity is measured [@zhang2022]. Synapse groups records into time slots, each made of a weekday and an hour (such as Mondays at eight). For each slot it counts how consistently an app appears there over several weeks. A slot that the same app fills week after week marks a periodic routine; a slot it fills only now and then does not. The method needs only one pass over the records, so it runs quickly, even on the modest computing resources of a free cloud plan.
+
+Other routines are sequences, such as opening email and then a calendar within a few minutes. Sequential pattern mining finds ordered patterns like this one in collections of records [@gan2019]. PrefixSpan is a widely used method for the task [@pei2004]. It grows each pattern step by step from a short beginning, called a prefix. In the example above, "email" is a prefix that can grow into "email, then calendar". At each step, only the parts of the data that can extend the current prefix are searched. Because candidate patterns that never occur are not built at all, the method stays efficient on large collections [@gan2019]. Synapse uses PrefixSpan to find routines of the form "A, then B within a set time" in each user's records.
+
+Routines are not fixed, so a learning method must also let old patterns fade. Sarker et al. (2019b) showed that favouring recent behaviour predicts phone usage better than treating all history equally. Synapse follows the same principle through recency weighting, in which the weight of each record halves after a set period called the half-life. With a half-life of four weeks, a record from four weeks ago counts half as much as one from today. At eight weeks it counts a quarter, and at twelve weeks an eighth. A habit that stops loses its score gradually, not all at once, while a new one gains strength week by week. In this way the system keeps up as a student's routine changes across a semester.
+
+Pattern mining is not the only way to learn routines from such data, and two alternatives are worth weighing. Deep learning models predict the next app a person will open from their context [@xia2020]. Banovic et al. (2016) modelled routines as choices driven by goals, drawing on methods from planning and decision-making. Both approaches can be powerful. Their cost is more data or more computing power, or results that are hard to explain. Pattern mining avoids both problems. Its output is itself an explanation, such as "you usually open your notes app after lectures". It also works from the few weeks of records that one study period provides, which is why it forms the core of the system.
+
+## 2.6 Representing What Is Learned
+
+Learned routines must be stored in a form that the system can search and reason over. One such form is a personal knowledge graph (PKG). A PKG records the people, places, things and activities related to one person, and the links between them [@balog2019]. Recent surveys describe how PKGs are built, kept up to date and used for personal services [@skjaeveland2024; @chakraborty2023]. Each item in a PKG is a node, and each link between two nodes carries a label and sometimes a weight. Routines fit this structure well. A routine connects an app, a time, a place and often an earlier action, and a graph holds those connections naturally.
+
+Synapse stores what it learns as such a graph. Its nodes are apps, places, time slots and tasks; its links record which of these occur together or follow one another. Every link carries a weight that grows when its two items occur together and fades when they do not. If a student stops taking notes, for instance, the link between a lecture slot and the notes app weakens. The graph thus keeps pace with recent behaviour, much like the recency weighting described earlier. Knowledge graphs can also supply reliable facts to language models and so help them give grounded answers [@pan2024]. Synapse's guide uses the graph in just this way whenever it answers a question about the user's routines.
+
+## 2.7 Suggestions and Their Timing
+
+A system that guides its users must decide what to suggest and when. Recommender systems are programs that suggest items or actions a user is likely to find useful [@zangerle2023]. Synapse's suggestions are of this kind, drawn from the routines it has learned. Timing matters as much as content. People are more open to notifications at some moments than at others, depending on what they are doing [@mehrotra2016]. Predicting the opportune moments to engage phone users works far better than a naive approach [@pielot2017]. So Synapse offers each suggestion shortly before the routine it supports usually happens, at a moment set by the student's own behaviour.
+
+Users also want a say in how much initiative such a system takes. Expectations of proactive artificial intelligence (AI) differ, and many people want to adjust how often it acts on its own [@meurisch2020]. Proactive suggestions are welcome only in suitable circumstances; poorly judged ones cause annoyance [@zargham2022]. Setting honest expectations helps users accept an AI that sometimes makes mistakes [@kocielnik2019]. Fixed reminders, by contrast, have had mixed effects on students' study behaviour [@nobbe2024]. Synapse builds these lessons into its design. Every suggestion can be accepted or dismissed, and a routine becomes settled only if the user keeps accepting it.
+
+## 2.8 Intelligent Assistants and Large Language Models
+
+Intelligent assistants are programs that help their users through conversation. Commercial voice assistants answer questions and carry out commands, but mainly when asked [@hoy2018]. Large language models (LLMs) have changed what such assistants can do. Trained on vast amounts of text, LLMs can follow instructions and perform new tasks from a few examples in a prompt [@brown2020]. In education they bring real opportunities for explanation and support, along with risks such as errors and over-reliance [@kasneci2023]. What Synapse needs from them is plain-language explanation. A guide that talks with students about their routines depends on it, so an LLM is the guide's voice.
+
+Language models answer best when they are given the right information. Retrieval-augmented generation (RAG) first retrieves records relevant to a question, then passes them to the model to ground its answer [@lewis2020; @fan2024]. An assistant that remembers its user over time also needs some form of memory. Recent work surveys how such assistants store, recall and update their memories [@zhang2025]. Generative agents are one example: they retrieve memories by how recent, important and relevant they are [@park2023]. Synapse's guide does much the same. Before answering, it retrieves the user's routines and recent activity, so its replies rest on the user's own data.
+
+Language models also carry risks, among them inaccurate answers and leaks of private information [@weidinger2022]. Synapse calls its model only from the server for this reason, so no secret keys ever reach the user's device. The model receives only the routines and summaries needed for each answer, never the raw records. Which provider runs the model matters as well, for the same reason. Providers' terms differ on whether submitted data may be stored, or used to train their models. The provider Synapse uses keeps submitted data out of both storage and training under its terms. The guide thus stays within the consent each user has given, even once a summary has left the server.
+
+## 2.9 Storing and Syncing Data Across Devices
+
+Synapse gathers data from more than one device, so it must bring that data together for each user. People's interactions increasingly span several devices, and keeping their information consistent across them is a challenge [@brudy2019]. A common answer is to store each user's data in one cloud database that all devices can reach. But devices are not always online. Local-first software keeps a working copy of data on each device and synchronises it when a connection returns [@kleppmann2019]. Synapse's collectors work the same way. Each device holds its records in a queue while it is offline and sends them to the database once the connection returns. Nothing recorded offline goes missing.
+
+Keeping each user's data separate matters as much as bringing it together. Every user's records sit in the same database, so Synapse has to make sure that no user can read another user's records. Row-level security does this. The database feature attaches an owner to every record and shows each user only their own rows. Because the rule lives inside the database itself, it holds even if the application code contains a mistake. A check written into the app would not. The same rule applies to every account, the developer's own included; no account is given a way around it. Each participant's data is protected in this way for the whole of the study, and after it ends.
+
+## 2.10 Privacy, Consent and Data Protection
+
+Personal activity data is sensitive, and collecting it raises clear privacy concerns. Mobile apps track their users widely, and little changed after the European Union's General Data Protection Regulation (GDPR) took effect [@kollnig2021]. Practices like these erode people's trust in the apps they use. People who worry about privacy are less willing to complete data collection tasks on their phones [@roberts2022]. Privacy by design responds to the problem by building privacy into a system from the start [@andrade2022]. In practice that means collecting as little data as possible, telling users what is collected and giving them control over it.
+
+In Nigeria, the Nigeria Data Protection Act (NDPA) 2023 sets the rules for processing personal data [@ndpa2023]. The Act requires a lawful basis for processing, such as consent, and it protects people's rights over their data. Mahmoud et al. (2025) examine how it applies to new technologies and stress the need to balance innovation with privacy. Synapse is designed to meet these rules from the outset, and no category of data is collected until the user enables it. Passwords, personal identification numbers (PINs) and card details are never recorded, whatever the user enables. Users can also see, export and delete their data at any time, so control stays with them.
+
+## 2.11 User Acceptance and Evaluation
+
+A system succeeds only if its intended users accept it. The Technology Acceptance Model (TAM) explains acceptance through two beliefs: that a system is useful, and that it is easy to use [@davis1989]. The Unified Theory of Acceptance and Use of Technology (UTAUT) adds further factors, among them social influence and supporting conditions [@dwivedi2019]. Both models have been applied to students. TAM has been used to explain university students' adoption of ChatGPT [@zogheib2024]. In Nigeria, effort expectancy and social influence shaped computer science students' adoption of mobile learning [@makinde2027]. These models guide the questionnaire used to evaluate Synapse.
+
+Usability is measured with the System Usability Scale (SUS), a ten-item questionnaire that gives a score from 0 to 100 [@lewis2018]. The SUS is short, reliable and widely used, which makes its results easy to compare with those of other systems. Suggestion quality is a separate matter. Frameworks for evaluating recommender systems stress measuring both accuracy and the experience of the user [@zangerle2023]. So Synapse is evaluated in several ways. Detected routines are compared with the routines participants confirm, and flexibility is tested by how quickly routines adapt when behaviour changes. Participants also rate the system's usefulness and ease of use, and their overall satisfaction with it.
+
+## 2.12 Technologies Used and Why They Were Chosen
+
+Table 2.1 summarises the technologies in Synapse and the reason each was chosen. The Android app is written in Kotlin with the Jetpack Compose interface toolkit. Góis Mateus and Martinez (2019) found that adopting Kotlin in Android apps was associated with fewer code smells (patterns in code that signal poor design). The web app uses React, one of the three web frameworks whose performance Bielak et al. (2022) compared. React builds an interface from small reusable parts called components. For the backend, Supabase provides a PostgreSQL database, sign-in and server functions in one free service. Development follows an agile approach of short cycles, each of which produces working results [@hoda2018].
+
+Table 2.1: Technologies used in Synapse
+
+| Technology | Used for | Reason for the choice | Alternatives considered |
+| --- | --- | --- | --- |
+| Kotlin with Jetpack Compose | Android app | Associated with fewer code smells than Java [@goismateus2019] | Java, Flutter |
+| Android usage statistics service | Recording app usage | Records app use without reading the screen | Accessibility service |
+| Browser extension | Recording websites visited | Captures web activity with the user's permission | Manual logging |
+| React | Web app and dashboard | Builds the interface from reusable components [@bielak2022] | Angular, Vue.js |
+| Supabase (PostgreSQL) | Database, sign-in, server functions | One free service with row-level security | Firebase, a self-built server |
+| Periodic pattern mining | Daily and weekly routines | Simple, fast and explainable [@zhang2022] | Deep learning [@xia2020] |
+| PrefixSpan | "A, then B" routines | Efficient sequence mining [@gan2019] | Apriori-style methods |
+| Recency weighting | Letting routines change | Favours recent behaviour [@sarker2019recency] | Treating all history equally |
+| Personal knowledge graph | Storing what is learned | Links apps, times, places and tasks [@skjaeveland2024] | Flat tables of records |
+| Language model with retrieval | The guide | Answers grounded in the user's own data [@fan2024] | Rule-based chatbot |
+| Agile development | Development method | Short cycles with working results [@hoda2018] | Waterfall model |
+
+## 2.13 Review of Existing Systems
+
+Several research systems already learn routines from phone data. Track Your Daily Routine (TYDR) is an Android app that tracks smartphone sensor and usage data to study daily routines [@beierle2018]. RecencyMiner mines each user's recent behaviour to predict their phone usage [@sarker2019recency]. Banovic et al. (2016) built models of routine behaviour from the actions people were observed to take. Koch et al. (2020) detected changes in daily routines from the smartphone use of 60 users. All four work with phone data alone, and all four stop at measuring and predicting behaviour; none guides the user during the day. Table 2.2 summarises them alongside the other systems reviewed.
+
+A second group of systems tracks time spent on computers. TimeAware showed people how they spent time on their computers, and the way it framed that information affected their productivity [@kim2016]. meTime gave people feedback on their computer use and helped them stay focused [@whittaker2016]. Meyer et al. (2017) concluded that self-monitoring at work needs actionable insights, not raw data alone. Rooksby et al. (2016) combined screen time from phones and computers, though only for personal tracking. All of these tools tell their users about past behaviour. None learns routines from that behaviour or suggests what to do next.
+
+A third group guides users without learning from their behaviour. SortOut, a time management app for students, reduced stress and improved planning, yet it relies on tasks entered by hand [@alhasani2025]. Good Vibrations used phone vibrations to nudge people towards less phone use; the effect faded once the nudges stopped [@okeke2018]. Digital self-control tools help people limit device use, but they do not help them understand their routines [@monge2023]. Commercial voice assistants respond to commands and do not learn a user's routine on their own [@hoy2018]. Research assistants that recommend apps from context, meanwhile, focus on answering single requests [@aliannejadi2021].
+
+Coverage of different regions in this field is also limited. A recent smartphone dataset gathered across eight countries includes no African country [@busso2025]. One of the few African datasets of student device behaviour is MakOne, collected from 72 university students in Uganda [@kizito2025]. Studies of Nigerian students' device use have mainly described usage patterns; they have not learned routines from them [@musa2026]. This review found no routine learning system built for Nigerian students. Synapse responds to that gap by focusing on students of a Nigerian university. The system is designed around their devices, their consent and the shape of their academic week.
+
+Table 2.2: Existing systems compared with Synapse
+
+| System | What it does | What it lacks that Synapse adds | Reference |
+| --- | --- | --- | --- |
+| TYDR | Tracks phone sensor and usage data for routine research | Phone only; no guidance | [@beierle2018] |
+| RecencyMiner | Mines recent behaviour to predict phone usage | Phone only; no guidance | [@sarker2019recency] |
+| Routine behaviour models | Model routines from observed actions | Not deployed as guidance | [@banovic2016] |
+| Routine change detection | Detects changes in daily phone routines | Detection only; no guidance | [@koch2020] |
+| TimeAware | Shows how computer time was spent | Computer only; no routine learning | [@kim2016] |
+| meTime | Gives feedback on computer use | Computer only; no routine learning | [@whittaker2016] |
+| Screen time tracking | Combines phone and computer screen time | Tracking only; no routine learning | [@rooksby2016] |
+| SortOut | Persuasive time management app for students | Relies on tasks typed in | [@alhasani2025] |
+| Good Vibrations | Nudges people to use their phone less | Effect fades; no routine learning | [@okeke2018] |
+| Voice assistants | Answer questions and carry out commands | Act only when asked | [@hoy2018] |
+
+## 2.14 Summary of the Gap
+
+Each part of Synapse exists somewhere in the literature, but no single system brings them together. Some systems learn routines, yet they measure behaviour instead of guiding it [@banovic2016; @beierle2018]. Others guide users without learning from their behaviour [@alhasani2025]. Routine learning usually draws on one device, and it treats old behaviour like new [@sarker2018seg; @sarker2019recency]. Privacy concerns, meanwhile, make consent essential for any such system [@roberts2022]. None of the systems reviewed combines consent-based phone and web data, routines that adapt over time and guidance from a language model for students. That combination is the gap Synapse is designed to fill. Chapter Three describes how.

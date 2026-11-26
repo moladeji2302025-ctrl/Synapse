@@ -71,3 +71,4 @@ Hope is Kotlin/Compose; its file paths below are under `C:\Users\mofej\Hope\app\
 - The cloned Imogen voice and any of Hope's recorded voice assets — personal-use only, never
   submitted. If Synapse needs a voice, use a properly licensed one.
 - Hope's keys and any real user data.
+  

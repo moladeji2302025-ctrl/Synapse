@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Synapse Face</title>
+  <style>
+    :root { color-scheme: dark; --bg: #050607; --fg: #e8ecef; --muted: #8a949c; --chip: #14181b; --chip-on: #233036; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--fg);
+           font: 15px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+           display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+    #face { width: min(420px, 90vw); aspect-ratio: 1; }
+    #caption { min-height: 2.8em; text-align: center; margin: 4px 0 18px; }
+    #caption b { display: block; font-size: 18px; }
+    #caption span { color: var(--muted); }
+    #moods { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 640px; }
+    button { background: var(--chip); color: var(--fg); border: 1px solid #222a2f; border-radius: 999px;
+             padding: 7px 14px; font: inherit; cursor: pointer; }
+    button[aria-pressed="true"] { background: var(--chip-on); border-color: #3d5560; }
+    kbd { color: var(--muted); font: 12px ui-monospace, monospace; margin-left: 6px; }
+    #all { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; width: 100%; max-width: 980px; }
+    #all figure { margin: 0; text-align: center; }
+    #all .f { width: 100%; aspect-ratio: 1; }
+    #all figcaption { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div id="face"></div>
+  <div id="caption" aria-live="polite"></div>
+  <div id="moods"></div>
+
+  <script>
+    // Browsers will not load the face's modules from file://, so say how to open it instead.
+    if (location.protocol === 'file:') {
+      document.getElementById('caption').innerHTML =
+        '<b>Open this page through the preview server</b>' +
+        '<span>Double-click <code>web\\preview-face.cmd</code>, or run <code>node web/scripts/serve.mjs</code> ' +
+        'and visit http://127.0.0.1:5179/face-demo.html</span>';
+    }
+  </script>
+  <script type="module">
+    import { createFace } from './src/face/face.js';
+    import { MOODS, KEEP_ALIVES } from './src/face/moods.js';
+
+    const params = new URLSearchParams(location.search);
+    if (params.has('all')) showAll();
+    else if (params.has('strip')) showStrip(params.get('strip'));
+    else showOne(params.get('mood') ?? undefined);
+
+    // ?strip=hop freezes one keep-alive at evenly spaced moments, so the whole action
+    // can be read at once, like an animator's pose sheet.
+    function showStrip(name) {
+      document.body.innerHTML = '<div id="all"></div>';
+      const n = Number(params.get('n') ?? 10), dur = KEEP_ALIVES[name].dur;
+      for (let i = 0; i < n; i++) {
+        const fig = document.createElement('figure');
+        const at = (i / (n - 1)) * dur;
+        fig.innerHTML = `<div class="f"></div><figcaption>${at.toFixed(2)} s</figcaption>`;
+        document.getElementById('all').appendChild(fig);
+        const face = createFace(fig.firstChild, { mood: params.get('mood') ?? 'idle', keepAlives: false, autoplay: false });
+        face.step(1.5); // let the mood settle first
+        face.play(name);
+        face.step(at);
+      }
+    }
+
+    // ?all shows every mood side by side.
+    function showAll() {
+      document.body.innerHTML = '<div id="all"></div>';
+      for (const name of Object.keys(MOODS)) {
+        const fig = document.createElement('figure');
+        fig.innerHTML = `<div class="f"></div><figcaption>${MOODS[name].label}</figcaption>`;
+        document.getElementById('all').appendChild(fig);
+        createFace(fig.firstChild, { mood: name }).setMood(name, { hold: false });
+      }
+    }
+
+    function showOne(initial) {
+      const face = createFace(document.getElementById('face'), { mood: initial });
+      if (params.get('play')) setTimeout(() => face.play(params.get('play')), Number(params.get('at') ?? 300));
+      const names = Object.keys(MOODS);
+      const bar = document.getElementById('moods');
+      const caption = document.getElementById('caption');
+
+      names.forEach((name, i) => {
+        const b = document.createElement('button');
+        b.dataset.mood = name;
+        b.innerHTML = `${MOODS[name].label}<kbd>${i < 9 ? i + 1 : i === 9 ? 0 : ''}</kbd>`;
+        b.onclick = () => face.setMood(name);
+        bar.appendChild(b);
+      });
+      addEventListener('keydown', e => {
+        const i = e.key === '0' ? 9 : Number(e.key) - 1;
+        if (names[i]) face.setMood(names[i]);
+      });
+
+      // Stand-in for a real voice level so listening and speaking move like they would live.
+      let shown = null;
+      (function tick(t) {
+        requestAnimationFrame(tick);
+        const m = face.mood;
+        if (m === 'speaking') face.setLevel(Math.max(0, Math.sin(t / 90) * Math.sin(t / 370) + 0.25 * Math.sin(t / 53)));
+        else if (m === 'listening') face.setLevel(0.25 + 0.25 * Math.sin(t / 140) * Math.sin(t / 610));
+        else face.setLevel(0);
+        if (m !== shown) {
+          shown = m;
+          caption.innerHTML = `<b>${MOODS[m].label}</b>`;
+          for (const b of bar.children) b.setAttribute('aria-pressed', String(b.dataset.mood === m));
+        }
+      })(0);
+    }
+  </script>
+</body>
+</html>
